@@ -53,14 +53,6 @@ abstract class CronJob
 		return false;
 	}
 
-	/*
-	 * Verify if the job is locked
-	 */
-	public final function locked(){
-		$locked = file_exists(LOCKDIR . '/'. $this->lockfile);
-		return $locked;
-	}
-
 	/**
 	* Execute the cronjob.
 	*/
@@ -100,6 +92,14 @@ abstract class CronJob
 	 */
 	protected function getLogName(){
 		return date('Y-m-d-H-i-s', $this->start_time).'.txt';
+	}
+
+	/*
+	 * Verify if the job is locked
+	 */
+	public final function locked(){
+		$locked = file_exists(LOCKDIR . '/'. $this->lockfile);
+		return $locked;
 	}
 
 	/**
