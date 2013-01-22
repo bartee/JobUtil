@@ -11,8 +11,9 @@
  * - Both dirs have to be writable
  *
  * @todo find out if it's costlier to keep the file pointer open or to re-open it every time.
+ * @todo Cron timestamp scheduling
  * @author Bart Stroeken
- * @package Cronjob
+ * @package JobUtil
 */
 abstract class CronJob
 {

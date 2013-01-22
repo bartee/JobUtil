@@ -2,6 +2,9 @@
 
 /**
 * Cronjob manager
+* 
+* @author Bart Stroeken
+* @package JobUtil
 */
 class CronjobManager
 {
