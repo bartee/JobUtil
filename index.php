@@ -12,3 +12,7 @@ define('JOB_DIR', BASEDIR.'/Jobs');
 
 require_once(BASEDIR .'/Base/CronJob.php');
 require_once(JOB_DIR .'/TestJob.php');
+
+$job = new TestJob();
+$job->execute();
+

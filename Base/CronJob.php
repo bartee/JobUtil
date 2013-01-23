@@ -23,6 +23,11 @@ abstract class CronJob
 	*/
 	protected $time = false;
 
+	/*
+	 * Cron formatted time of running the job. Calculated from start-run
+	*/
+	protected $time_schedule;
+
 	/**
 	 * Start time, will be set automatically
 	 */ 
@@ -146,7 +151,27 @@ abstract class CronJob
 		if (count($timestamp) != 6) {
 			return false;
 		}
-		return true;
+
+		/**
+		 * Perhaps scheduling starting from now?
+		 */ 
+		$mintimes = array(0, 0, 1, 1, 0, 1970);
+		$maxtimes = array(59, 23, 31, 12, 6, 2099);
+		$resultset = array();
+		$success = true;
+		foreach ($timestamp as $index => $value) {
+			$result = $this->parseTimePart($value, $mintimes[$index], $maxtimes[$index]);
+			if (!$result){
+				$success = false;
+			}
+			$resultset[] = $result;
+		}
+
+		if ($success){
+			$this->time_schedule = $resultset;
+		}
+
+		return $success;
 	}
 
 	/**
@@ -175,7 +200,49 @@ abstract class CronJob
 	 */
 	protected function isScheduled($timestamp){
 		// See if it matches the schedule
-			// @TODO finish this scheduling.
+		// @TODO finish this scheduling.
 		return true;
 	}
+
+	/**
+	* Parse a string, and check if it can be scheduled sooner or later
+	* 
+	* @param string $string
+	* @param int $interval_min
+	* @param int $interval_max
+	* @return array
+	*/
+	protected function parseTimePart($string, $interval_min, $interval_max){
+		if ($string == '*') {
+			return $string;
+		}
+
+		if (is_int($string)){
+			return array($string);
+		}
+		
+		$resultset = array();
+		
+		if (strpos($string,',') ){
+			$split_string = explode(',', $string);
+			foreach ($split_string as $index => $value) {
+				if(is_int(intval($value))){
+					$resultset[] = $value;
+				}
+			}
+			return $resultset;
+		}
+
+		if (strpos($string, '/')){
+			$split_string = explode('/', $string);
+			if (is_int(intval($split_string[1])) && is_int($interval_min) && is_int($interval_max)){
+
+				$resultset = range($interval_min, $interval_max, $split_string[1]);
+				return $resultset;
+			}
+		}
+		return false;
+	}
 }
+
+?>
