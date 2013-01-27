@@ -71,10 +71,10 @@ abstract class CronJob
 			echo 'SKIP Job '.get_called_class().': job is still running';
 			return true;
 		}
-		$time = $this->getLastRunTime();
+		$last_run_time = $this->getLastRunTime();
 
-		if ($time){
-			if (!$this->isScheduled($time)){
+		if ($last_run_time){
+			if (!$this->isScheduled($last_run_time)){
 				echo 'SKIP Job '.get_called_class().': job is not due';
 				return true;
 			}
@@ -95,8 +95,8 @@ abstract class CronJob
 	/**
 	 * Return the name of the class
 	 */
-	protected function getLogName(){
-		return date('Y-m-d-H-i-s', $this->start_time).'.txt';
+	protected final function getLogName(){
+		return date('Y-n-j-H-i-s-N', $this->start_time).'.txt';
 	}
 
 	/*
@@ -108,7 +108,8 @@ abstract class CronJob
 	}
 
 	/**
-	 * 
+	 * Lock the job by creating a file. That file will be your lock. 
+	 * As long as it exists, a new instance of cron job will not be started
 	 */
 	protected final function lock(){
  		$pointer = fopen(LOCKDIR . '/'.  $this->lockfile, 'w');
@@ -139,6 +140,13 @@ abstract class CronJob
 
 	/**
 	 * Validate the set cron time.
+	 * Ordering, prefixed with date()-format
+	 * - i - minutes
+	 * - H - hours
+	 * - j - day of month
+	 * - n - month
+	 * - N - day of week
+	 * - Y - year
 	 * 
 	 * @see http://www.nncron.ru/help/EN/working/cron-format.htm
 	 **/
@@ -189,19 +197,52 @@ abstract class CronJob
 		
 		$file_name = str_replace('.txt','', $files[0]);
 		$time = explode('-',$file_name);
-		return mktime($time[3],$time[4],$time[5], intval($time[1]), intval($time[2]), intval($time[0]));
+		/*
+		Logdate: Y-n-j-H-i-s-N
+		This format should do the trick
+	 	*/
+		return array(	intval($time[4]),
+						intval($time[3]),
+						intval($time[2]), 
+						intval($time[1]), 
+						intval($time[6]), 
+						intval($time[0]));
 	}
 
 	/**
-	 * Verify if the job is due
+	 * Verify if the job is due. Input is the last run time
 	 * 
-	 * @param array $timestamp
+	 * @param array $last_run_time
 	 * @return boolean
 	 */
-	protected function isScheduled($timestamp){
+	protected function isScheduled($last_run_time){
 		// See if it matches the schedule
 		// @TODO finish this scheduling.
-		return true;
+		// - Check last run time
+		// - Check current time
+		// - Check scheduled time
+		
+		$startdate =array(	date('i'),
+						 	date('H'),
+						 	date('j'),
+						 	date('n'),
+						 	date('N'),
+						 	date('Y'));
+						
+		foreach ($this->time_schedule as $scheduled_index => $scheduled_value) {
+
+			if ($scheduled_value != '*' && is_array($scheduled_value)){
+				foreach ($scheduled_value as $timed_index => $timed_value) {
+					// - If last run < scheduled < current >> return true			
+					if ($last_run_time[$scheduled_index] < $timed_value &&
+						$last_run_time[$scheduled_index] < $startdate[$scheduled_index]) {
+						return true;
+					}
+				}
+
+			}
+		}
+		return false;
 	}
 
 	/**
