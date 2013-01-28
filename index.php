@@ -11,8 +11,7 @@ define('LOGDIR', BASEDIR.'/log');
 define('JOB_DIR', BASEDIR.'/Jobs');
 
 require_once(BASEDIR .'/Base/CronJob.php');
-require_once(JOB_DIR .'/TestJob.php');
+require_once(BASEDIR .'/Base/CronJobManager.php');
 
-$job = new TestJob();
-$job->execute();
-
+$manager = new CronJobManager();
+$manager->run();
