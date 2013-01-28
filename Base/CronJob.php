@@ -62,27 +62,33 @@ abstract class CronJob
 	* Execute the cronjob.
 	*/
 	public final function execute(){
-		if (!$this->valid) {
-			echo 'SKIP Job '.get_called_class().': Job is INVALID';
-			return true;
-		}
-		if ($this->locked()){
-			// still running the job.
-			echo 'SKIP Job '.get_called_class().': job is still running';
-			return true;
-		}
-		$last_run_time = $this->getLastRunTime();
-
-		if ($last_run_time){
-			if (!$this->isScheduled($last_run_time)){
-				echo 'SKIP Job '.get_called_class().': job is not due';
-				return true;
-			}
+		if (!$this->canBeRun()){
+			return false;
 		}
 		$this->start_time = mktime();
 		$this->lock();
 		$this->handle();
 		$this->release();
+	}
+
+	public function canBeRun(){
+		if (!$this->valid) {
+			echo 'SKIP Job '.get_called_class().': Job is INVALID';
+			return false;
+		}
+		if ($this->locked()){
+			// still running the job.
+			echo 'SKIP Job '.get_called_class().': job is still running';
+			return false;
+		}
+		$last_run_time = $this->getLastRunTime();
+		if ($last_run_time){
+			if (!$this->isScheduled($last_run_time)){
+				echo 'SKIP Job '.get_called_class().': job is not due';
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
